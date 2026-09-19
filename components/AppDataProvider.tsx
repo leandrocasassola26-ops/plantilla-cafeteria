@@ -14,7 +14,7 @@ type Store = {
   resetDemo: () => void
 }
 
-const STORAGE_KEY = "lumen-cafe-demo-v1"
+const STORAGE_KEY = "lumen-cafe-demo-v2"
 
 function isoInDays(days: number) {
   const date = new Date()
