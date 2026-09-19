@@ -25,9 +25,9 @@ function isoInDays(days: number) {
 function seedAppointments(): Appointment[] {
   const now = new Date().toISOString()
   return [
-    { id: "pedido-sofia", client: "Sofía Martínez", phone: "+54 11 2233 4455", serviceId: "desayunos", serviceName: "Desayunos", treatment: "Morning Ritual", branch: "Palermo Soho", address: "Malabia 1680", date: isoInDays(1), time: "10:30", duration: 25, price: 8900, promoId: "p1", status: "Pendiente", source: "App", updatedAt: now },
+    { id: "pedido-sofia", client: "Sofía Martínez", phone: "+54 11 2233 4455", serviceId: "delivery", serviceName: "Pedido para delivery", treatment: "1× Morning Ritual · 1× Cold brew", branch: "Delivery", address: "Av. Santa Fe 3250, 4° B", date: isoInDays(0), time: "12:45", duration: 45, price: 14300, promoId: "p1", status: "Pendiente", source: "App", updatedAt: now },
     { id: "pedido-julian", client: "Julián Gómez", phone: "+54 11 5555 1201", serviceId: "cafes", serviceName: "Cafés", treatment: "2 Flat white + 1 croissant", branch: "Belgrano", address: "Arcos 2145", date: isoInDays(0), time: "09:15", duration: 15, price: 13500, status: "Confirmado", source: "App", updatedAt: now },
-    { id: "reserva-clara", client: "Clara Fernández", phone: "+54 11 5555 2202", serviceId: "desayunos", serviceName: "Reserva de mesa", treatment: "Brunch para 4 personas", branch: "Palermo Soho", address: "Malabia 1680", date: isoInDays(0), time: "11:30", duration: 90, price: 49800, promoId: "p2", status: "Pendiente", source: "Call Center", updatedAt: now },
+    { id: "pedido-clara", client: "Clara Fernández", phone: "+54 11 5555 2202", serviceId: "retiro", serviceName: "Pedido para retirar", treatment: "2× Brunch Lumen · 2× Latte", branch: "Palermo Soho", address: "Malabia 1680", date: isoInDays(0), time: "11:30", duration: 25, price: 40000, promoId: "p2", status: "Pendiente", source: "Call Center", updatedAt: now },
     { id: "pedido-martin", client: "Martín Díaz", phone: "+54 11 5555 3303", serviceId: "almuerzos", serviceName: "Almuerzos", treatment: "Focaccia de bondiola + Cold brew", branch: "Belgrano", address: "Arcos 2145", date: isoInDays(0), time: "13:00", duration: 35, price: 17200, status: "Pendiente", source: "App", updatedAt: now },
   ]
 }
@@ -60,7 +60,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     appointments,
     activity,
     addAppointment(appointment) {
-      const id = `turno-${Date.now()}`
+      const id = `pedido-${Date.now()}`
       const next = { ...appointment, id, updatedAt: new Date().toISOString() }
       setAppointments(current => [next, ...current])
       setActivity(current => [{ id: `act-${Date.now()}`, appointmentId: id, text: `${appointment.client} realizó un pedido desde la app`, createdAt: new Date().toISOString() }, ...current])
@@ -71,7 +71,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setActivity(current => [{ id: `act-${Date.now()}`, appointmentId: id, text: action, createdAt: new Date().toISOString() }, ...current])
     },
     setStatus(id, status) {
-      const labels = { Confirmado: "confirmó su pedido o reserva", Cancelado: "canceló su pedido o reserva", Pendiente: "dejó la solicitud pendiente", Realizado: "marcó el pedido como entregado" }
+      const labels = { Confirmado: "tiene su pedido en preparación", Cancelado: "canceló su pedido", Pendiente: "tiene un pedido recibido", Realizado: "recibió su pedido" }
       const client = appointments.find(item => item.id === id)?.client || "El cliente"
       setAppointments(current => current.map(item => item.id === id ? { ...item, status, updatedAt: new Date().toISOString() } : item))
       setActivity(current => [{ id: `act-${Date.now()}`, appointmentId: id, text: `${client} ${labels[status]}`, createdAt: new Date().toISOString() }, ...current])

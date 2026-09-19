@@ -6,84 +6,84 @@ import ClientShell from "@/components/ClientShell"
 import { promociones, servicios, sucursales } from "@/lib/config"
 import { useBusinessData } from "@/components/AppDataProvider"
 
-const horas = ["08:30", "09:15", "10:30", "11:30", "13:00", "16:30", "18:00", "19:30"]
-const weekdays = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"]
-const months = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
+type CartLine = { name: string; price: number; quantity: number; category: string }
 
-function nextDays() {
-  return Array.from({ length: 5 }, (_, index) => {
-    const date = new Date()
-    date.setDate(date.getDate() + index + 1)
-    return { iso: date.toISOString().slice(0, 10), weekday: weekdays[date.getDay()], number: String(date.getDate()).padStart(2, "0"), month: months[date.getMonth()] }
-  })
-}
-
-export default function Reservar() {
-  const { appointments, addAppointment, updateAppointment } = useBusinessData()
-  const [step, setStep] = useState(1)
-  const [service, setService] = useState("")
-  const [treatment, setTreatment] = useState("")
-  const [promo, setPromo] = useState("")
+export default function Pedir() {
+  const { addAppointment } = useBusinessData()
+  const [category, setCategory] = useState("cafes")
+  const [cart, setCart] = useState<CartLine[]>([])
+  const [mode, setMode] = useState<"Retiro"|"Delivery">("Retiro")
   const [branchId, setBranchId] = useState("palermo")
-  const [day, setDay] = useState("")
-  const [hour, setHour] = useState("")
-  const [editingId, setEditingId] = useState("")
+  const [address, setAddress] = useState("Av. Santa Fe 3250, 4° B")
+  const [payment, setPayment] = useState("Mercado Pago")
+  const [notes, setNotes] = useState("")
+  const [step, setStep] = useState(1)
   const [complete, setComplete] = useState(false)
-  const days = useMemo(nextDays, [])
-  const chosen = useMemo(() => servicios.find(item => item.id === service), [service])
-  const chosenTreatment = chosen?.tratamientos.find(item => item.nombre === treatment)
-  const chosenPromo = promociones.find(item => item.id === promo)
   const branch = sucursales.find(item => item.id === branchId) || sucursales[0]
-  const compatiblePromos = promociones.filter(item => item.categoria === ({ cafes: "TAKE AWAY", desayunos: "DESAYUNOS", pasteleria: "MERIENDA", almuerzos: "BRUNCH" } as Record<string,string>)[service])
+  const selectedCategory = servicios.find(item => item.id === category) || servicios[0]
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const requestedService = params.get("servicio")
     const requestedPromo = params.get("promo")
-    const editing = params.get("reprogramar")
-    if (requestedService && servicios.some(item => item.id === requestedService)) setService(requestedService)
+    if (requestedService && servicios.some(item => item.id === requestedService)) setCategory(requestedService)
     if (requestedPromo) {
-      const selected = promociones.find(item => item.id === requestedPromo)
-      if (selected) {
-        setPromo(selected.id)
-        setTreatment(selected.nombre)
-        const serviceByCategory = ({ "TAKE AWAY": "cafes", DESAYUNOS: "desayunos", MERIENDA: "pasteleria", BRUNCH: "almuerzos" } as Record<string,string>)[selected.categoria]
-        if (serviceByCategory) setService(serviceByCategory)
-      }
+      const promo = promociones.find(item => item.id === requestedPromo)
+      if (promo) setCart([{ name: promo.nombre, price: promo.precio, quantity: 1, category: promo.categoria }])
     }
-    if (editing) setEditingId(editing === "1" ? "pedido-sofia" : editing)
   }, [])
 
-  useEffect(() => {
-    if (!editingId) return
-    const current = appointments.find(item => item.id === editingId)
-    if (!current) return
-    setService(current.serviceId)
-    setTreatment(current.treatment)
-    setPromo(current.promoId || "")
-    setBranchId(sucursales.find(item => item.nombre === current.branch)?.id || "palermo")
-    setStep(2)
-  }, [editingId, appointments])
-
-  function chooseService(id: string) {
-    setService(id); setTreatment(""); setPromo("")
+  function add(name: string, price: number) {
+    setCart(current => current.some(item => item.name === name)
+      ? current.map(item => item.name === name ? { ...item, quantity: item.quantity + 1 } : item)
+      : [...current, { name, price, quantity: 1, category: selectedCategory.nombre }])
   }
 
-  function confirm() {
-    if (!chosen || !treatment || !day || !hour) return
-    if (editingId) updateAppointment(editingId, { date: day, time: hour }, `Sofía Martínez cambió su reserva para ${day} a las ${hour}`)
-    else addAppointment({ client: "Sofía Martínez", phone: "+54 11 2233 4455", serviceId: chosen.id, serviceName: chosen.nombre, treatment, branch: branch.nombre, address: branch.direccion, date: day, time: hour, duration: chosen.duracion, price: chosenPromo?.precio || chosenTreatment?.precio || chosen.desde, promoId: promo || undefined, status: "Pendiente", source: "App" })
+  function changeQuantity(name: string, delta: number) {
+    setCart(current => current.map(item => item.name === name ? { ...item, quantity: item.quantity + delta } : item).filter(item => item.quantity > 0))
+  }
+
+  function confirmOrder() {
+    if (!cart.length || (mode === "Delivery" && !address.trim())) return
+    const now = new Date()
+    now.setMinutes(now.getMinutes() + (mode === "Delivery" ? 45 : 25))
+    addAppointment({
+      client: "Sofía Martínez",
+      phone: "+54 11 2233 4455",
+      serviceId: mode.toLowerCase(),
+      serviceName: `Pedido para ${mode.toLowerCase()}`,
+      treatment: cart.map(item => `${item.quantity}× ${item.name}`).join(" · "),
+      branch: mode === "Retiro" ? branch.nombre : "Delivery",
+      address: mode === "Retiro" ? branch.direccion : address,
+      date: new Date().toISOString().slice(0, 10),
+      time: now.toTimeString().slice(0, 5),
+      duration: mode === "Delivery" ? 45 : 25,
+      price: total,
+      status: "Pendiente",
+      source: "App",
+    })
     setComplete(true)
   }
 
-  if (complete) return <ClientShell active="turnos"><section className="success-view"><div>✓</div><small>{editingId ? "RESERVA ACTUALIZADA" : "PEDIDO RECIBIDO"}</small><h1>{editingId ? "Tu nuevo horario quedó guardado" : "La cocina ya recibió tu pedido"}</h1><p>Podés seguir su estado y el negocio lo ve inmediatamente.</p><Link href="/turnos">VER MIS PEDIDOS</Link></section></ClientShell>
+  if (complete) return <ClientShell active="turnos"><section className="success-view"><div>✓</div><small>PEDIDO CONFIRMADO</small><h1>Ya lo estamos preparando</h1><p>Tiempo estimado: {mode === "Delivery" ? "35–45 minutos" : "20–25 minutos"}. Podés seguirlo desde Mis pedidos.</p><Link href="/turnos">SEGUIR MI PEDIDO</Link></section></ClientShell>
 
   return <ClientShell active="reservar">
-    <section className="page-head"><small>{editingId ? "CAMBIAR HORARIO" : "NUEVO PEDIDO O RESERVA"}</small><h1>{step === 1 ? "Elegí del menú" : step === 2 ? "¿Cuándo lo querés?" : "Revisá tu pedido"}</h1><p>{editingId ? "Conservamos productos, sucursal y precio. Solo elegí otro día y horario." : step === 1 ? "Productos, combos y precios antes de continuar." : step === 2 ? "Elegí sucursal, día y horario de retiro o mesa." : "Confirmá que los datos sean correctos."}</p></section>
-    <div className="stepper">{[1,2,3].map(number => <i className={step >= number ? "active" : ""} key={number}>{number}</i>)}</div>
-    {step === 1 && <><div className="service-list">{servicios.map(item => <button className={service === item.id ? "selected" : ""} onClick={() => chooseService(item.id)} key={item.id}><i>{item.icono}</i><div><b>{item.nombre}</b><span>{item.detalle}</span></div><strong>desde<br/>${item.desde.toLocaleString("es-AR")}</strong></button>)}</div>{chosen && <><h3 className="section-label">ELEGÍ EL SERVICIO</h3><div className="choice-grid">{chosen.tratamientos.map(item => <button className={treatment === item.nombre ? "selected" : ""} onClick={() => { setTreatment(item.nombre); setPromo("") }} key={item.nombre}><span>{item.nombre}</span><b>${item.precio.toLocaleString("es-AR")}</b></button>)}</div></>}{compatiblePromos.length > 0 && <><h3 className="section-label">PROMOCIONES COMPATIBLES</h3>{compatiblePromos.map(item => <button className={`booking-promo ${promo === item.id ? "selected" : ""}`} onClick={() => { setPromo(item.id); setTreatment(item.nombre) }} key={item.id}><div><small>{item.categoria}</small><b>{item.nombre}</b><span>{item.incluye.join(" · ")}</span></div><strong>${item.precio.toLocaleString("es-AR")}</strong></button>)}</>}</>}
-    {step === 2 && <><label className="field-label">Sucursal<select value={branchId} disabled={Boolean(editingId)} onChange={event => setBranchId(event.target.value)}>{sucursales.map(item => <option value={item.id} key={item.id}>{item.nombre} · {item.direccion}</option>)}</select></label><h3 className="section-label">ELEGÍ EL DÍA</h3><div className="day-row five">{days.map(item => <button className={day === item.iso ? "selected" : ""} onClick={() => setDay(item.iso)} key={item.iso}><span>{item.weekday}</span><b>{item.number}</b><small>{item.month}</small></button>)}</div><h3 className="section-label">HORARIOS DISPONIBLES</h3><div className="hour-grid">{horas.map(item => <button className={hour === item ? "selected" : ""} onClick={() => setHour(item)} key={item}>{item}</button>)}</div></>}
-    {step === 3 && <section className="confirm-card"><div className="confirm-mark">✓</div><small>RESUMEN</small><h2>{chosen?.nombre}</h2><p><span>Tratamiento</span><b>{treatment}</b></p><p><span>Sucursal</span><b>{branch.nombre}</b></p><p><span>Dirección</span><b>{branch.direccion}</b></p><p><span>Fecha</span><b>{day.split("-").reverse().join("/")}</b></p><p><span>Horario</span><b>{hour} hs</b></p><p><span>Duración</span><b>{chosen?.duracion} minutos</b></p><p><span>Precio final</span><b>${(chosenPromo?.precio || chosenTreatment?.precio || chosen?.desde || 0).toLocaleString("es-AR")}</b></p><div className="notice">Al confirmar, la reserva aparecerá inmediatamente en el panel de la empresa.</div></section>}
-    <div className="flow-actions">{step > (editingId ? 2 : 1) && <button onClick={() => setStep(step - 1)}>ATRÁS</button>}<button className="primary" disabled={step === 1 && (!service || !treatment) || step === 2 && (!day || !hour)} onClick={() => step < 3 ? setStep(step + 1) : confirm()}>{step === 3 ? (editingId ? "GUARDAR NUEVO HORARIO" : "CONFIRMAR RESERVA") : "CONTINUAR"}</button></div>
+    <section className="page-head"><small>PEDÍ DESDE LA APP</small><h1>{step === 1 ? "¿Qué te gustaría pedir?" : "Finalizá tu compra"}</h1><p>{step === 1 ? "Elegí productos, agregalos al carrito y modificá las cantidades." : "Seleccioná retiro o delivery y tu medio de pago."}</p></section>
+    {step === 1 && <>
+      <div className="filter-row">{servicios.map(item => <button className={category === item.id ? "active" : ""} onClick={() => setCategory(item.id)} key={item.id}>{item.nombre.toUpperCase()}</button>)}</div>
+      <section className="choice-grid">{selectedCategory.tratamientos.map(item => <button onClick={() => add(item.nombre, item.precio)} key={item.nombre}><span>{item.nombre}</span><b>${item.precio.toLocaleString("es-AR")}</b><small>＋ AGREGAR</small></button>)}</section>
+      <h3 className="section-label">PROMOCIONES</h3>
+      {promociones.slice(0,2).map(promo => <button className="booking-promo" onClick={() => add(promo.nombre, promo.precio)} key={promo.id}><div><small>{promo.categoria}</small><b>{promo.nombre}</b><span>{promo.incluye.join(" · ")}</span></div><strong>${promo.precio.toLocaleString("es-AR")}</strong></button>)}
+    </>}
+    {cart.length > 0 && <section className="confirm-card" style={{marginTop:18}}><small>TU PEDIDO</small>{cart.map(item => <p key={item.name}><span>{item.name}<br/><small>${item.price.toLocaleString("es-AR")} c/u</small></span><b><button onClick={() => changeQuantity(item.name,-1)}>−</button> {item.quantity} <button onClick={() => changeQuantity(item.name,1)}>＋</button></b></p>)}<p><span>TOTAL</span><b>${total.toLocaleString("es-AR")}</b></p></section>}
+    {step === 2 && <section className="confirm-card">
+      <small>ENTREGA</small><div className="filter-row" style={{marginTop:14}}><button className={mode === "Retiro" ? "active" : ""} onClick={() => setMode("Retiro")}>RETIRAR EN LOCAL</button><button className={mode === "Delivery" ? "active" : ""} onClick={() => setMode("Delivery")}>DELIVERY</button></div>
+      {mode === "Retiro" ? <label className="field-label">Local<select value={branchId} onChange={event => setBranchId(event.target.value)}>{sucursales.map(item => <option value={item.id} key={item.id}>{item.nombre} · {item.direccion}</option>)}</select></label> : <label className="field-label">Dirección de entrega<input value={address} onChange={event => setAddress(event.target.value)} /></label>}
+      <label className="field-label">Medio de pago<select value={payment} onChange={event => setPayment(event.target.value)}><option>Mercado Pago</option><option>Tarjeta</option><option>Efectivo</option></select></label>
+      <label className="field-label">Indicaciones<textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Ej.: sin azúcar, timbre 4B…" /></label>
+      <p><span>Entrega estimada</span><b>{mode === "Delivery" ? "35–45 min" : "20–25 min"}</b></p><p><span>Total</span><b>${total.toLocaleString("es-AR")}</b></p>
+    </section>}
+    <div className="flow-actions">{step === 2 && <button onClick={() => setStep(1)}>VOLVER AL MENÚ</button>}<button className="primary" disabled={!cart.length} onClick={() => step === 1 ? setStep(2) : confirmOrder()}>{step === 1 ? `VER CARRITO · $${total.toLocaleString("es-AR")}` : "CONFIRMAR PEDIDO"}</button></div>
   </ClientShell>
 }

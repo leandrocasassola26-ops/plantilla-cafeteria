@@ -15,3 +15,8 @@ html, body { background: #e8dfd1; }
 .admin-side { background: #1d2b24; }
 .admin-side nav button.active { background: #33483d; }
 .service-scroll i, .settings button > span, .activity-item > span, .automation > span { background: #efe1d1; }
+.field-label { display: block; margin-top: 18px; }
+.field-label input, .field-label textarea { display: block; width: 100%; margin-top: 8px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: white; font: inherit; }
+.field-label textarea { min-height: 82px; resize: vertical; }
+.confirm-card p button { border: 1px solid var(--line); background: white; border-radius: 8px; width: 27px; height: 27px; }
+.choice-grid button small { color: var(--brand); font-size: 8px; font-weight: 900; }

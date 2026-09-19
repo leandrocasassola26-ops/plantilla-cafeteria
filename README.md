@@ -4,8 +4,8 @@ Aplicación independiente y personalizable para cafeterías.
 
 Incluye dos experiencias dentro del mismo proyecto aislado:
 
-- App del cliente: carta, pedidos, reservas, promociones, puntos y perfil.
-- Panel de la empresa: comandas, mesas, reservas, clientes, menú, stock, caja y reportes.
+- App del cliente: carta, carrito, retiro o delivery, promociones, puntos y seguimiento.
+- Panel de la empresa: comandas, delivery, clientes, menú, stock, caja y reportes.
 
 ## Aislamiento
 
