@@ -1,0 +1,17 @@
+:root {
+  --ink: #201c18;
+  --muted: #756a60;
+  --paper: #f7f1e7;
+  --card: #fffaf3;
+  --brand: #26382f;
+  --brand2: #d2a06e;
+  --line: #dfd1c0;
+  --green: #3f6852;
+  --gold: #a66d38;
+  --red: #a34c4c;
+}
+
+html, body { background: #e8dfd1; }
+.admin-side { background: #1d2b24; }
+.admin-side nav button.active { background: #33483d; }
+.service-scroll i, .settings button > span, .activity-item > span, .automation > span { background: #efe1d1; }
