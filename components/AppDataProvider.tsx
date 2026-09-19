@@ -14,7 +14,7 @@ type Store = {
   resetDemo: () => void
 }
 
-const STORAGE_KEY = "lumen-cafe-demo-v2"
+const STORAGE_KEY = "melo-cafe-demo-v1"
 
 function isoInDays(days: number) {
   const date = new Date()
@@ -26,8 +26,8 @@ function seedAppointments(): Appointment[] {
   const now = new Date().toISOString()
   return [
     { id: "pedido-sofia", client: "Sofía Martínez", phone: "+54 11 2233 4455", serviceId: "delivery", serviceName: "Pedido para delivery", treatment: "1× Morning Ritual · 1× Cold brew", branch: "Delivery", address: "Av. Santa Fe 3250, 4° B", date: isoInDays(0), time: "12:45", duration: 45, price: 14300, promoId: "p1", status: "Pendiente", source: "App", updatedAt: now },
-    { id: "pedido-julian", client: "Julián Gómez", phone: "+54 11 5555 1201", serviceId: "cafes", serviceName: "Cafés", treatment: "2 Flat white + 1 croissant", branch: "Belgrano", address: "Arcos 2145", date: isoInDays(0), time: "09:15", duration: 15, price: 13500, status: "Confirmado", source: "App", updatedAt: now },
-    { id: "pedido-clara", client: "Clara Fernández", phone: "+54 11 5555 2202", serviceId: "retiro", serviceName: "Pedido para retirar", treatment: "2× Brunch Lumen · 2× Latte", branch: "Palermo Soho", address: "Malabia 1680", date: isoInDays(0), time: "11:30", duration: 25, price: 40000, promoId: "p2", status: "Pendiente", source: "Call Center", updatedAt: now },
+    { id: "pedido-julian", client: "Julián Gómez", phone: "+54 11 5555 1201", serviceId: "mesa", serviceName: "Pedido para mesa 8", treatment: "2× Flat white · 1× Croissant de manteca", branch: "Belgrano", address: "Mesa 8 · Arcos 2145", date: isoInDays(0), time: "09:15", duration: 15, price: 13500, status: "Confirmado", source: "App", updatedAt: now },
+    { id: "pedido-clara", client: "Clara Fernández", phone: "+54 11 5555 2202", serviceId: "retiro", serviceName: "Pedido para retirar", treatment: "2× Brunch Melo · 2× Latte", branch: "Palermo Soho", address: "Malabia 1680", date: isoInDays(0), time: "11:30", duration: 25, price: 40000, promoId: "p2", status: "Pendiente", source: "Call Center", updatedAt: now },
     { id: "pedido-martin", client: "Martín Díaz", phone: "+54 11 5555 3303", serviceId: "almuerzos", serviceName: "Almuerzos", treatment: "Focaccia de bondiola + Cold brew", branch: "Belgrano", address: "Arcos 2145", date: isoInDays(0), time: "13:00", duration: 35, price: 17200, status: "Pendiente", source: "App", updatedAt: now },
   ]
 }
